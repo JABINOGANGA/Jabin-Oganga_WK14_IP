@@ -1,0 +1,656 @@
+---
+title: "week14 Core-IP"
+author: "Jabin Oganga"
+date: "19/11/2021"
+output:
+  html_document:
+    df_print: paged
+  word_document: default
+  pdf_document: default
+---
+# **Assessment**
+
+You are a Data analyst at Carrefour Kenya and are currently undertaking a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax). Your project has been divided into four parts where you'll explore a recent marketing dataset by performing various unsupervised learning techniques and later providing recommendations based on your insights.
+
+Part 1: Dimensionality Reduction
+
+This section of the project entails reducing your dataset to a low dimensional dataset using the t-SNE algorithm or PCA. You will be required to perform your analysis and provide insights gained from your analysis.
+
+Part 2: Feature Selection
+
+This section requires you to perform feature selection through the use of the unsupervised learning methods learned earlier this week. You will be required to perform your analysis and provide insights on the features that contribute the most information to the dataset.
+
+Part 3: Association Rules
+
+This section will require that you create association rules that will allow you to identify relationships between variables in the dataset. You are provided with a separate dataset that comprises groups of items that will be associated with others. Just like in the other sections, you will also be required to provide insights for your analysis.
+
+Part 4: Anomaly Detection
+
+You have also been requested to check whether there are any anomalies in the given sales dataset. The objective of this task being fraud detection. 
+
+
+ 
+
+# ***Practice on Dimensionality Reduction, Feature Selection, Association Rules and Anomaly Detection***
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE,eval = FALSE,cache = FALSE)
+```
+
+
+
+
+```{r}
+plot(cars)
+```
+
+## ***Loading Data & Libraries***
+```{r}
+#install.packages("tidyverse")
+library(tidyverse)
+
+#install.packages("ggplot2")
+library(ggplot2)
+
+#install.packages("caret")
+library(caret)
+
+#install.packages("caretEnsemble")
+library(caretEnsemble)
+
+#install.packages("factoextra")
+library(factoextra)
+
+#install.packages("class")
+library(class)
+
+#install.packages("FactoMineR")
+library(FactoMineR)
+
+#install.packages('psych')
+library(psych)
+
+#install.packages('Amelia')
+library(Amelia)
+
+#install.packages('mice')
+library(mice)
+
+#install.packages('GGally')
+library(GGally)
+
+#install.packages('rpart')
+library(rpart)
+
+#install.packages('randomForest')
+library(randomForest)
+
+#install.packages("dplyr")
+library(dplyr)
+
+
+
+```
+
+## ***Loading the datasets***
+
+```{r}
+carr1 = read.csv("http://bit.ly/CarreFourDataset")
+carr2 = read.csv("http://bit.ly/SupermarketDatasetII")
+carr3 = read.csv("http://bit.ly/CarreFourSalesDataset")
+
+```
+
+## ***Checking the Datasets***
+```{r}
+# data for Part 1 & 2 
+head(carr1)
+```
+
+
+```{r}
+# data for Part 3 
+head(carr2)
+
+```
+
+
+```{r}
+# data for Part 4 
+head(carr3)
+```
+
+## ***Part I: Dimentionality Reduction using  t-Distributed Stochastic Neighbor Embedding (t-SNE) algorithm***
+
+```{r}
+
+carr1
+```
+
+
+```{r}
+# Checking the number of columns and rows in the entire dataset
+rows <- nrow(carr1)
+cols <- ncol(carr1)
+cha1 <- "The No. of Rows is"
+cha2 <-  "& The No. of Columns is" 
+
+cat(cha1, rows, cha2, cols)
+```
+
+
+```{r}
+# Checking the format types of various data imputed in various columns of the dataset
+str(carr1)
+```
+
+
+```{r}
+#Checking the columns in the dataset and the unique No. values
+x = 1
+for (i in carr1[1:16]){
+  names <- names(carr1)[x]
+  print(names)
+  
+  values <- length(unique(i))
+  print(values)
+  
+  
+x = x + 1  
+}
+# x = x + 1
+```
+
+
+```{r}
+#Checking the columns in the dataset and the unique No. values
+lapply (carr1, class)
+```
+
+
+```{r}
+# Checking for null values
+null <- sum(is.na(carr1))
+null
+
+```
+
+
+```{r}
+# checking & confirming for null values in each column
+colSums(is.na(carr1))
+colSums
+```
+
+
+```{r}
+# Checking for duplicates
+sum(duplicated(carr1))
+```
+## ***Data Cleaning***
+
+```{r}
+
+x = 1
+for (i in carr1[1:16]){
+  if (class(i) == "numeric"){
+    #x <- plots[, i]
+    boxplot(i,main = paste(names(carr1)[x]), col= "orange")}
+    # names <- names(Kira)[i]
+  
+  
+  
+  if (class(i) == "integer"){
+    #x <- plots[, i]
+    boxplot(i, main = paste(names(carr1)[x]), col= "cyan")}
+  
+  
+  else {
+    print("No plot")
+  }
+  
+  x = x + 1
+  
+}
+```
+
+
+```{r}
+# Removing all null values incase there is any
+carr1 <- na.omit(carr1)
+sum(is.na(carr1))
+```
+
+```{r}
+# Removing all the Duplicates
+carr1 <- carr1[!duplicated(kira),]
+sum(duplicated(carr1))
+```
+
+### ***Performing the t-SNE Algorithm o the dataset***
+#### ***Encoding our Columns***
+```{r}
+# One hot encoding our branch column 
+unique(carr1$Branch)
+carr1$Branch <- factor(carr1$Branch,
+levels <- c("A", "B", "C"),
+labels <- c(1,2,3))
+unique(carr1$Branch)
+
+```
+
+
+```{r}
+# One hot encoding our Payment column 
+unique(carr1$Payment)
+carr1$Payment <- factor(carr1$Payment,
+levels <- c("Ewallet" , "Cash", "Credit card"),
+labels <- c(1,2,3))
+unique(carr1$Payment)
+```
+
+
+
+
+```{r}
+# One hot encoding our Customer.type column 
+
+unique(carr1$Customer.type)
+carr1$Customer.type <- factor(carr1$Customer.type,
+levels <- c("Member" , "Normal"),
+labels <- c(1,0))
+unique(carr1$Customer.type)
+```
+
+
+```{r}
+# One hot encoding our Product.line column 
+unique(carr1$Product.line)
+carr1$Product.line <- factor(carr1$Product.line,
+levels <- c("Health and beauty" , "Electronic accessories", "Home and lifestyle","Sports and travel", "Food and beverages", "Fashion accessories" ),
+labels <- c(1,2,3,4,5,6))
+unique(carr1$Product.line)
+```
+```{r}
+# One hot encoding our Gender column
+unique(carr1$Gender)
+carr1$Gender <- factor(carr1$Gender,
+levels <- c("Female", "Male" ),
+labels <- c(0,1))
+unique(carr1$Gender)
+
+```
+
+
+```{r}
+# Confirming by using summary the outcomes of the one hot encoding
+carr1.new <- carr1[, c(2:8,11,12,13,14,15,16)]
+summary(carr1.new)
+```
+
+
+```{r}
+# Checking the data layout
+head(carr1.new)
+```
+```{r}
+# Confirming the names of the columns
+names(carr1.new)
+```
+```{r}
+# Checking the structure of the data
+str(carr1.new)
+```
+
+
+```{r}
+library(Rtsne)
+```
+
+
+```{r}
+# Tranforming the target feature to factors
+carr1.la <- carr1.new$Rating
+carr1.new$Rating <- as.factor(carr1.new$Rating)
+
+colors = rainbow(length(unique(carr1.new$Rating)))
+names(colors) = unique(carr1.new$Rating)
+
+```
+
+
+```{r}
+# Calling out the reduction technique t-SNE
+carr1.new.tsne <- Rtsne(carr1.new[,1:11,13], dims = 2, perplexity = 30, verbose = TRUE, max_iter = 500)
+
+carr1.new.time <- system.time(Rtsne(carr1.new[,1:11,13], dims = 2, perplexity = 30, verbose = TRUE, max_iter = 500))
+```
+
+
+```{r}
+# pLOTTING THE OUTCOME
+plot(carr1.new.tsne$Y, t = 'n', main = "carr1.new.tsne")
+text(carr1.new.tsne$Y,labels = carr1.new$Rating,col = colors[carr1.new$Rating])
+```
+
+#### ***1. The data had minimal variance***
+
+## ***Part II: Feature Selection***
+```{r}
+library(caret)
+library(corrplot)
+```
+
+
+```{r}
+#Convert the data to factors and integers 
+carr1.new2 <- carr1[, c(2:8,11,12,13,14,15,16)]
+str(carr1.new2)
+```
+```{r}
+carr1.new2$Branch <- as.numeric(carr1.new2$Branch)
+carr1.new2$Customer.type <- as.numeric(carr1.new2$Customer.type)
+carr1.new2$Gender <- as.numeric(carr1.new2$Gender)
+carr1.new2$Product.line <- as.numeric(carr1.new2$Product.line)
+carr1.new2$Payment <- as.numeric(carr1.new2$Payment)
+```
+
+```{r}
+str(carr1.new2)
+```
+
+
+```{r}
+is.na(carr1.new2)
+```
+
+
+```{r}
+names(carr1.new2)
+```
+
+
+
+```{r}
+
+```
+
+
+```{r}
+# Calculating the correlation matrix
+correlationMatrix <- cor(carr1.new2)
+
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff = 0.75) 
+
+highlyCorrelated
+names(carr1.new2[,highlyCorrelated ])
+```
+
+
+```{r}
+```
+
+
+```{r}
+library(wskm)
+```
+
+
+```{r}
+library(cluster)
+```
+
+
+
+
+
+```{r}
+install.packages("Boruta")
+install.packages("mlbench")
+install.packages("randomForest")
+```
+
+
+```{r}
+library(Boruta)
+library(mlbench)
+library(randomForest)
+```
+
+
+```{r}
+carr1.new3 <- carr1[, c(2:8,11,12,13,14,15,16)]
+str(carr1.new2)
+```
+
+
+```{r}
+# Sequential forward greedy search (default)
+library(clustvarsel)
+```
+
+
+```{r}
+library(mclust)
+```
+
+
+```{r}
+carr.out <- clustvarsel(carr1.new3, G = 1:5)
+carr.out
+```
+
+
+```{r}
+subset.carr = carr1.new3[, carr.out$subset]
+mod.carr = Mclust(subset.carr, G = 1:5 )
+summary(mod.carr)
+```
+
+```{r}
+set.seed(111)
+boruta <- Boruta(Rating ~ ., data = carr1.new3, doTrace = 2, maxRuns = 500)
+
+print(boruta)
+plot(boruta, las = 2, cex.axis = 0.7)
+```
+
+
+```{r}
+# Tentative Fix
+bor <- TentativeRoughFix(boruta)
+print(bor)
+attStats(boruta)
+
+```
+
+
+### ***6 attributes confirmed important: cogs,gross.income, Quantity, Tax, Total and 1 more***
+
+### ***6 attributes confirmed unimportant:Branch, Customer.type, Gender,gross.margin.percentage, Payment and 1 more***
+
+## ***Part III: Associative Analysis***
+
+```{r}
+# Loading the arules library
+#
+library(arules)
+```
+
+```{r}
+carr2
+```
+
+
+```{r}
+#Checking the dimensions of the table
+dim(carr2)
+
+```
+
+
+```{r}
+# Verifying the object's class
+class(carr2)
+```
+
+
+```{r}
+## Inspecting rules
+rules <- apriori(carr2)
+rules
+```
+
+
+```{r}
+summary(rules)
+```
+
+
+```{r}
+rules <- apriori(carr2,parameter = list(supp =0.001, conf = 0.8))
+inspect(rules)
+```
+
+
+```{r}
+summary(carr2)
+```
+
+
+```{r}
+summary(rules)
+```
+
+
+```{r}
+rules <- sort(rules, by = "confidence",decreasing = TRUE)
+inspect(rules[1:5])
+```
+
+
+```{r}
+whole.weat.flour <- subset(rules, subset = rhs %pin% "whole.weat.flour")
+
+whole.weat.flour <- sort(whole.weat.flour, by = "confidence", decreasing = TRUE)
+inspect(whole.weat.flour[1:5])
+```
+#### ***The chances of one buying whole weat flour yams is likey 100% to buy low fat yoghurt***
+
+## Part IV: 
+
+```{r}
+# Loading the necessary libraries
+library(tidyverse)
+library(anomalize)
+```
+
+
+```{r}
+pkg <- c('tidyverse','tibbletime','anomalize','timetk')
+install.packages(pkg)
+
+```
+
+
+```{r}
+
+library(tidyverse)
+library(tibbletime)
+library(anomalize)
+library(timetk)
+
+```
+
+
+```{r}
+carr3
+```
+
+```{r}
+install.packages("pacman")
+# Loading the necessary libraries and automatically installing them if not present
+pacman :: p_load(rio,tidyverse, Amelia ,anomalize)
+```
+
+
+```{r}
+#Load the readr library to bring in the dataset
+library(readr)
+```
+
+
+```{r}
+#Reading and checking the sales data
+carr3 <- read.csv('http://bit.ly/CarreFourSalesDataset')
+head(carr3)
+tail(carr3)
+```
+
+
+```{r}
+# Checking the size and shape of data
+dim(carr3)
+```
+
+
+```{r}
+# Viewing data types using str().
+str(carr3)
+```
+
+
+```{r}
+```
+
+```{r}
+## To ensure uniformity, I will lowercase all the columns
+names(carr3)<- tolower(names(data))
+head(carr3) 
+```
+
+
+```{r}
+#changing date to date time. 
+carr3$date <- as.Date(carr3$date, "%m/%d/%y")
+head(carr3)
+```
+
+
+
+
+
+```{r}
+# group and tally the number of transactions per day
+carr3.new <- carr3 %>% group_by(date) %>% tally()
+colnames(carr3.new) <- c('transactionDate', 'totalCount')
+head(carr3.new)
+```
+
+
+```{r}
+# we now plot using plot_anomaly_decomposition() to visualize out data.
+carr3.new %>%
+    time_decompose(totalCount) %>%
+    anomalize(remainder) %>%
+    plot_anomaly_decomposition(ncol = 1, alpha_dots = 0.5) +
+    ggtitle("Anomaly Detection Plot")
+```
+
+
+```{r}
+# ploting the recomposition to try and see anomalies
+#
+carr3.new %>%
+    time_decompose(totalCount) %>%
+    anomalize(remainder) %>%
+    time_recompose() %>%
+    plot_anomalies(time_recomposed = TRUE, ncol = 1, alpha_dots = 0.25, fill="cyan") +
+    ggtitle("Anomalie detection plots")
+```
+
+### ***We therefore conclude that there were no anomalies on the dataset***
+
+
+
+
